@@ -1,8 +1,6 @@
 'use client';
-import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import React from 'react';
-import logo from '@/media/SimliLogoV2.svg';
 import cn from '@/app/utils/TailwindMergeAndClsx';
 
 interface Props {
@@ -10,12 +8,11 @@ interface Props {
   children?: React.ReactNode;
 }
 
-const SimliHeaderLogo = ({ className, children }: Props) => {
+const VEMIHeaderLogo = ({ className, children }: Props) => {
   const router = useRouter();
   const pathname = usePathname();
 
   const handleClick = async () => {
-    console.log('Clicked Simli logo', pathname);
     if (pathname === '/') {
       window.location.reload();
       return;
@@ -25,9 +22,9 @@ const SimliHeaderLogo = ({ className, children }: Props) => {
 
   return (
     <div className={cn('fixed top-[32px] left-[32px] cursor-pointer', className)} onClick={handleClick}>
-      <Image src={logo} className='Logo' alt='Simli logo' />
+      <div className="text-white font-bold text-3xl">VEMI AI</div>
     </div>
   );
 };
 
-export default SimliHeaderLogo;
+export default VEMIHeaderLogo;

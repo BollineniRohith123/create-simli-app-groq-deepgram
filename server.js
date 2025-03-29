@@ -266,7 +266,7 @@ async function promptLLM(ws, initialPrompt, prompt, connectionId) {
     
     const controller = new AbortController();
     const stream = await groq.chat.completions.create({
-      model: "mixtral-8x7b-32768",
+      model: "qwen-2.5-32b",
       messages: [
         {
           role: 'assistant',
@@ -277,9 +277,11 @@ async function promptLLM(ws, initialPrompt, prompt, connectionId) {
           content: prompt
         }
       ],
-      temperature: 1,
-      max_tokens: 50,
-      top_p: 1,
+      temperature: 0.7,     // Reduced from 1.0 for more consistent clinical responses
+      max_tokens: 75,       // Increased slightly to allow for complete clinical thoughts
+      top_p: 0.9,          // Adjusted for more focused medical responses
+      frequency_penalty: 0.3, // Added to reduce repetition in clinical questioning
+      presence_penalty: 0.3,  // Added to encourage diverse clinical scenarios
       stream: true,
     }, { signal: controller.signal });
 

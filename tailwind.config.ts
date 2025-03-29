@@ -22,7 +22,10 @@ const config: Config = {
       blue: colors.blue,
       red: '#ff0000',
       simliblue: '#0000ff',
-      simligray: '#111111'
+      simligray: '#111111',
+      vemiblue: '#1a5f7a',
+      vemiaccent: '#0c9bed',
+      vemibg: '#142d4c'
     },
     extend: {
       fontFamily: {

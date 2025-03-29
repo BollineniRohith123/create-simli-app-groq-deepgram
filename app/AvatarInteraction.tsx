@@ -60,30 +60,40 @@ const AvatarInteraction: React.FC<AvatarInteractionProps> = ({
 
   const initializeWebSocket = useCallback((connectionId: string) => {
     socketRef.current = new WebSocket(`ws://localhost:8080/ws?connectionId=${connectionId}`);
-
+    socketRef.current.binaryType = 'arraybuffer';
+    
     socketRef.current.onopen = () => {
       console.log('Connected to server');
     };
-
+    
     socketRef.current.onmessage = (event) => {
-      if (event.data instanceof Blob) {
-        event.data.arrayBuffer().then((arrayBuffer) => {
-          const uint8Array = new Uint8Array(arrayBuffer);
-          simliClient.sendAudioData(uint8Array);
-        });
-      } else {
+      if (event.data instanceof ArrayBuffer) {
+        const uint8Array = new Uint8Array(event.data);
+        simliClient.sendAudioData(uint8Array);
+      } else if (typeof event.data === 'string') {
         try {
           const message = JSON.parse(event.data);
           if (message.type === 'interrupt') {
             console.log('Interrupting current response');
             simliClient.ClearBuffer();
+            // Send silence after interruption to keep avatar animated
+            setTimeout(() => {
+              const silenceData = new Uint8Array(1024).fill(0);
+              simliClient.sendAudioData(silenceData);
+            }, 100);
           } else if (message.type === 'text') {
-            // const uint8Array = new Uint8Array(6000).fill(0);
-            // simliClient.sendAudioData(uint8Array);
+            // Keep avatar animated during text processing
+            const silenceData = new Uint8Array(512).fill(0);
+            simliClient.sendAudioData(silenceData);
           }
         } catch (error) {
           console.error('Error parsing WebSocket message:', error);
         }
+      } else if (event.data instanceof Blob) {
+        event.data.arrayBuffer().then((arrayBuffer) => {
+          const uint8Array = new Uint8Array(arrayBuffer);
+          simliClient.sendAudioData(uint8Array);
+        });
       }
     };
 
@@ -169,15 +179,19 @@ const AvatarInteraction: React.FC<AvatarInteractionProps> = ({
 
   useEffect(() => {
     if (audioStream && socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
-      const mediaRecorder = new MediaRecorder(audioStream);
+      const mediaRecorder = new MediaRecorder(audioStream, {
+        mimeType: 'audio/webm;codecs=opus',
+        audioBitsPerSecond: 16000
+      });
 
       mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          socketRef.current?.send(event.data);
+        if (event.data.size > 0 && socketRef.current?.readyState === WebSocket.OPEN) {
+          socketRef.current.send(event.data);
         }
       };
 
-      mediaRecorder.start(100);
+      // Reduced chunk size for more frequent updates
+      mediaRecorder.start(50); // Changed from 100ms to 50ms
 
       return () => {
         mediaRecorder.stop();
@@ -200,7 +214,7 @@ const AvatarInteraction: React.FC<AvatarInteractionProps> = ({
             onClick={handleStart}
             disabled={isLoading}
             className={cn(
-              "w-full h-[52px] mt-4 disabled:bg-[#343434] disabled:text-white disabled:hover:rounded-[100px] bg-simliblue text-white py-3 px-6 rounded-[100px] transition-all duration-300 hover:text-black hover:bg-white hover:rounded-sm",
+              "w-full h-[52px] mt-4 disabled:bg-[#343434] disabled:text-white disabled:hover:rounded-[100px] bg-vemiaccent text-white py-3 px-6 rounded-[100px] transition-all duration-300 hover:text-black hover:bg-white hover:rounded-sm",
               "flex justify-center items-center"
             )}
           >
@@ -208,7 +222,7 @@ const AvatarInteraction: React.FC<AvatarInteractionProps> = ({
               <IconSparkleLoader className="h-[20px] animate-loader" />
             ) : (
               <span className="font-abc-repro-mono font-bold w-[164px]">
-                Test Interaction
+                Start Interaction
               </span>
             )}
           </button>
